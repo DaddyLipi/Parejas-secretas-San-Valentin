@@ -25,9 +25,6 @@ out_colnames = [
 
 json_data = []
 
-print(len(out_colnames))
-
-
 # extract pais users
 def extract_tokens(df):
     out = df.dropna()
@@ -63,7 +60,6 @@ def calcular_indice(p1,p2):
     counter=1
     if relacion_entre_interesados(p1,p2) == True:
       for i in range(3,16):
-          #print(get_valor_pregunta(counter,p1,p2,lista_keys[i]))
           indice += get_valor_pregunta(counter,p1,p2,lista_keys[i])
           counter+=1
     return indice
@@ -91,7 +87,6 @@ def usar_algoritmo_con_una_persona(p1):
   for persona in json_data:
     if(persona["nombre"] != p1["nombre"]):
       res=calcular_indice(p1,persona)
-      #print(persona["nombre"], "/", p1["nombre"])
     
     dictionary[persona["nombre"]] = []
     dictionary[persona["nombre"]] = res
@@ -174,7 +169,17 @@ def parejas_final(df):
         prev_df = df
         parejas = lista_parejas(df)
         parejas_a_csv(parejas)
-        df = limpiar_max_df(df,parejas)   
+        df = limpiar_max_df(df,parejas)
+
+def cvs_to_excel():
+    #lee el archivo csv
+    cvsDataframe = pd.read_csv('parejas.csv')
+    #crea el excel
+    resultExcelFile = pd.ExcelWriter('Indice de Compatibilidad.xlsx')
+    #convierte csv a excel
+    cvsDataframe.to_excel(resultExcelFile, index=False)
+    #lo guarda
+    resultExcelFile.save()
 
 df = pd.read_csv("respuestas_tokens.tsv", sep="\t")
 
@@ -200,3 +205,5 @@ lista_completa = lista_maximos_scores(json_data)
 df_indice_relacion = pd.DataFrame.from_dict(lista_completa, orient='index')
 
 parejas_final(df_indice_relacion)
+
+cvs_to_excel()
