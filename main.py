@@ -61,11 +61,78 @@ def calcular_indice(p1,p2):
     indice=0
     counter=1
     for i in range(3,16):
-        print(get_valor_pregunta(counter,p1,p2,lista_keys[i]))
         indice += get_valor_pregunta(counter,p1,p2,lista_keys[i])
         counter+=1
     return indice
 
+
+#no tiene que tomar en cuenta, si los ponemos con 0, tarda mucho el sistema
+def relacion_entre_interesados(p1,p2):
+  op1 = p1["orientacion"] #op = orientacion persona
+  gp1 = p1["genero"]      #gp = genero persona
+  op2 = p2["orientacion"]
+  gp2 = p2["genero"]
+  if(op1 == "Homosexual" or op1 == "Bisexual"):
+    if(gp1 == gp2 and (op2 == "Homosexual" or op2 == "Bisexual")):
+      return True
+  
+  if(op1 == "Heterosexual" or op1 == "Bisexual"):
+     if(gp1 != gp2 and (op2 == "Heterosexual" or op2 == "Bisexual")):
+      return True
+
+  return False
+
+
+def usar_algoritmo_con_una_persona(p1):
+  dictionary = {}
+  res=0
+  for persona in json_data:
+    if(persona["nombre"] != p1["nombre"]):
+      res=calcular_indice(p1,persona)
+      #print(persona["nombre"], "/", p1["nombre"])
+    
+    dictionary[persona["nombre"]] = []
+    dictionary[persona["nombre"]] = res
+    res=0
+
+  return dict(dictionary.items())
+
+def lista_maximos_scores(json_data):
+    dictionary={}
+    for persona in json_data:
+        dictionary[persona["nombre"]] = []
+        dictionary[persona["nombre"]] = usar_algoritmo_con_una_persona(persona)
+    return dictionary
+
+def sacar_pareja(nombre_persona1,df):  
+    df_especial=df
+    lista_valores=list(df[nombre_persona1].array)
+    maximo=max(list(df[nombre_persona1]))
+    indice=df.loc[df[nombre_persona1] == maximo].index.array[0]
+    indice_max=df[indice].max()
+    while(maximo!=indice_max):
+        df_especial=df_especial.drop(columns=[indice])
+        df_especial=df_especial.drop(indice)
+        lista_valores.remove(maximo)
+        aux=max(lista_valores)
+        maximo=aux
+        indice=df_especial.loc[df_especial[nombre_persona1] == maximo].index.array[0]
+        indice_max=df_especial[indice].max()
+    pareja=[nombre_persona1,indice,indice_max]
+    return pareja
+
+def lista_parejas(df):
+    lista_parejas=[]
+    for i in df:
+        lista_parejas.append(sacar_pareja(i,df))
+    return lista_parejas
+
+def limpiar_max_df(df,parejitas):
+    for elemento in parejitas:
+        if(elemento[2]!=0):
+            df=df.drop(columns=[elemento[0]])
+            df=df.drop(elemento[0])
+    return df
 
 df = pd.read_csv("respuestas_tokens.tsv", sep="\t")
 paid_users = extract_tokens(df)
