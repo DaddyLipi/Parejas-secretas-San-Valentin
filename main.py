@@ -1,5 +1,6 @@
 import pandas as pd
 import json
+import csv
 
 out_colnames = [
     "orientacion",
@@ -60,11 +61,12 @@ def get_valor_pregunta(numPregunta,p1,p2,key):
 def calcular_indice(p1,p2):
     indice=0
     counter=1
-    for i in range(3,16):
-        indice += get_valor_pregunta(counter,p1,p2,lista_keys[i])
-        counter+=1
+    if relacion_entre_interesados(p1,p2) == True:
+      for i in range(3,16):
+          #print(get_valor_pregunta(counter,p1,p2,lista_keys[i]))
+          indice += get_valor_pregunta(counter,p1,p2,lista_keys[i])
+          counter+=1
     return indice
-
 
 #no tiene que tomar en cuenta, si los ponemos con 0, tarda mucho el sistema
 def relacion_entre_interesados(p1,p2):
@@ -134,17 +136,57 @@ def limpiar_max_df(df,parejitas):
             df=df.drop(elemento[0])
     return df
 
+def buscar_json(elemento):
+    for i in json_data:
+        if (i["nombre"] == elemento[0]):
+            tel1 = i["telefono"]
+        if (i["nombre"] == elemento[1]):
+            tel2 =  i["telefono"]
+    data = [elemento[0],tel1, elemento[1],tel2,elemento[2]]
+    return data
+
+def parejas_a_csv(parejas):
+    for elemento in parejas:
+        if(elemento[2]!=0):
+            datos = buscar_json(elemento)
+            with open('parejas.csv', 'a', encoding='UTF8', newline='') as f:
+                writer = csv.writer(f)
+                writer.writerow(datos)
+                f.close()
+
+def assign_header():
+    header =["nombre1", "telefono1","nombre2","telefono2","indice compatibilidad"]
+    with open('parejas.csv', 'a', encoding='UTF8', newline='') as f:
+        writer = csv.writer(f)
+        writer.writerow(header)
+                
+def delete_data_csv():
+    with open('parejas.csv', 'w', encoding='UTF8', newline='') as f:
+        f.truncate()
+        f.close()
+
+
+def parejas_final(df):
+    delete_data_csv()
+    assign_header()
+    prev_df=pd.DataFrame
+    while(df.size != prev_df.size):
+        prev_df = df
+        parejas = lista_parejas(df)
+        parejas_a_csv(parejas)
+        df = limpiar_max_df(df,parejas)   
+
 df = pd.read_csv("respuestas_tokens.tsv", sep="\t")
+
 paid_users = extract_tokens(df)
-clean_df(paid_users)
 
+df = clean_df(paid_users)
 
-in_colnames = list(paid_users.columns)
-print(len(in_colnames))
+in_colnames = list(df.columns)
 
-rename_columns(paid_users, in_colnames, out_colnames)
+rename_columns(df, in_colnames, out_colnames)
 
-myjson = paid_users.to_json(orient="records")
+myjson = df.to_json(orient="records")
 
 with open("users.json", "w", encoding="utf-8") as output_file:
     output_file.write(myjson)
@@ -152,5 +194,9 @@ with open("users.json", "w", encoding="utf-8") as output_file:
 with open('users.json') as json_file:
    json_data = json.load(json_file)
    
-
 lista_keys=list(json_data[0].keys())
+
+lista_completa = lista_maximos_scores(json_data)
+df_indice_relacion = pd.DataFrame.from_dict(lista_completa, orient='index')
+
+parejas_final(df_indice_relacion)
