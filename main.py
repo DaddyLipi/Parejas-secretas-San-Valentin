@@ -11,7 +11,7 @@ out_colnames = [
     "entretenimiento",
     "pasatiempo",
     "personalidad",
-    "peliculas",
+    "lenguaje",
     "comida",
     "loteria",
     "bebida",
